@@ -56,6 +56,22 @@ class _ForgotPassFormState extends State<ForgotPassForm> {
   List<String> errors = [];
   String email;
 
+  void addError({String error}) {
+    if (!error.contains(error)) {
+      setState(() {
+        errors.add(error);
+      });
+    }
+  }
+
+  void removeError({String error}) {
+    if (error.contains(error)) {
+      setState(() {
+        errors.remove(error);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Form(
@@ -68,29 +84,19 @@ class _ForgotPassFormState extends State<ForgotPassForm> {
               email = newValue;
             },
             onChanged: (value) {
-              if (value.isNotEmpty && errors.contains(kEmailNullError)) {
-                setState(() {
-                  errors.remove(kEmailNullError);
-                });
-              } else if (emailValidatorRegExp.hasMatch(value) &&
-                  errors.contains(kInvalidEmailError)) {
-                setState(() {
-                  errors.remove(kInvalidEmailError);
-                });
+              if (value.isNotEmpty) {
+                removeError(error: kEmailNullError);
+              } else if (emailValidatorRegExp.hasMatch(value)) {
+                removeError(error: kInvalidEmailError);
               }
               return null;
             },
             validator: (value) {
-              if (value.isEmpty && !errors.contains(kEmailNullError)) {
-                setState(() {
-                  errors.add(kEmailNullError);
-                });
+              if (value.isEmpty) {
+                addError(error: kEmailNullError);
                 return "";
-              } else if (emailValidatorRegExp.hasMatch(value) &&
-                  !errors.contains(kInvalidEmailError)) {
-                setState(() {
-                  errors.add(kInvalidEmailError);
-                });
+              } else if (!emailValidatorRegExp.hasMatch(value)) {
+                addError(error: kEmailNullError);
                 return "";
               }
               return null;
