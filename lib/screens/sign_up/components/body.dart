@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:shop_app/components/custom_surffix_icon.dart';
 import 'package:shop_app/components/default_button.dart';
+import 'package:shop_app/components/form_error.dart';
+import 'package:shop_app/components/social_card.dart';
 import 'package:shop_app/constants.dart';
+import 'package:shop_app/screens/complete_profile/complete_profile_screen.dart';
 import 'package:shop_app/size_config.dart';
 
 class Body extends StatelessWidget {
@@ -13,18 +16,53 @@ class Body extends StatelessWidget {
       child: Padding(
         padding:
             EdgeInsets.symmetric(horizontal: getProportionateScreenWidth(20)),
-        child: Column(
-          children: [
-            Text(
-              "Register Account",
-              style: headingStyle,
-            ),
-            Text(
-              "Complete your details or continue \nwith social media",
-              textAlign: TextAlign.center,
-            ),
-            SignUpForm()
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              SizedBox(
+                height: SizeConfig.screenHeight * 0.02,
+              ),
+              Text(
+                "Register Account",
+                style: headingStyle,
+              ),
+              Text(
+                "Complete your details or continue \nwith social media",
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(
+                height: SizeConfig.screenHeight * 0.07,
+              ),
+              SignUpForm(),
+              SizedBox(
+                height: SizeConfig.screenHeight * 0.08,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SocialCard(
+                    icon: "assets/icons/twitter.svg",
+                    press: () {},
+                  ),
+                  SocialCard(
+                    icon: "assets/icons/facebook-2.svg",
+                    press: () {},
+                  ),
+                  SocialCard(
+                    icon: "assets/icons/google-icon.svg",
+                    press: () {},
+                  ),
+                ],
+              ),
+              SizedBox(
+                height: getProportionateScreenHeight(20),
+              ),
+              Text(
+                "By cotinuing your confirm that you agree \nwith our Term  anf Condition",
+                textAlign: TextAlign.center,
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -38,25 +76,24 @@ class SignUpForm extends StatefulWidget {
 
 class _SignUpFormState extends State<SignUpForm> {
   final _formKey = GlobalKey<FormState>();
-  List<String> errors = [];
   String email;
   String password;
-  String confirmPassword;
+  String conformPassword;
+  bool remember = false;
+  final List<String> errors = [];
 
   void addError({String error}) {
-    if (!error.contains(error)) {
+    if (!errors.contains(error))
       setState(() {
         errors.add(error);
       });
-    }
   }
 
   void removeError({String error}) {
-    if (error.contains(error)) {
+    if (errors.contains(error))
       setState(() {
         errors.remove(error);
       });
-    }
   }
 
   @override
@@ -69,36 +106,42 @@ class _SignUpFormState extends State<SignUpForm> {
           SizedBox(height: getProportionateScreenHeight(30)),
           buildPasswordFormField(),
           SizedBox(height: getProportionateScreenHeight(30)),
-          buildConfPasswordFormField(),
+          buildConformPassFormField(),
+          FormError(errors: errors),
           SizedBox(height: getProportionateScreenHeight(40)),
           DefaultButton(
             text: "Continue",
             press: () {
-              if (_formKey.currentState.validate()) {}
+              if (_formKey.currentState.validate()) {
+                _formKey.currentState.save();
+                // if all are valid then go to success screen
+                Navigator.pushNamed(context, CompleteProfileScreen.routeName);
+              }
             },
-          )
+          ),
         ],
       ),
     );
   }
 
-  TextFormField buildConfPasswordFormField() {
+  TextFormField buildConformPassFormField() {
     return TextFormField(
       obscureText: true,
-      onSaved: (newValue) {
-        confirmPassword = newValue;
-      },
+      onSaved: (newValue) => conformPassword = newValue,
       onChanged: (value) {
-        if (password == confirmPassword) {
-          removeError(error: KMatchPassError);
+        if (value.isNotEmpty) {
+          removeError(error: kPassNullError);
+        } else if (value.isNotEmpty && password == conformPassword) {
+          removeError(error: kMatchPassError);
         }
-        return null;
+        conformPassword = value;
       },
       validator: (value) {
         if (value.isEmpty) {
+          addError(error: kPassNullError);
           return "";
-        } else if (password == confirmPassword) {
-          addError(error: KMatchPassError);
+        } else if ((password != value)) {
+          addError(error: kMatchPassError);
           return "";
         }
         return null;
@@ -106,10 +149,10 @@ class _SignUpFormState extends State<SignUpForm> {
       decoration: InputDecoration(
         labelText: "Confirm Password",
         hintText: "Re-enter your password",
+        // If  you are using latest version of flutter then lable text and hint text shown like this
+        // if you r using flutter less then 1.20.* then maybe this is not working properly
         floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(
-          svgIcon: "assets/icons/Lock.svg",
-        ),
+        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Lock.svg"),
       ),
     );
   }
@@ -117,24 +160,21 @@ class _SignUpFormState extends State<SignUpForm> {
   TextFormField buildPasswordFormField() {
     return TextFormField(
       obscureText: true,
-      onSaved: (newValue) {
-        password = newValue;
-      },
+      onSaved: (newValue) => password = newValue,
       onChanged: (value) {
         if (value.isNotEmpty) {
           removeError(error: kPassNullError);
         } else if (value.length >= 8) {
-          removeError(error: kPassNullError);
+          removeError(error: kShortPassError);
         }
         password = value;
-        return null;
       },
       validator: (value) {
         if (value.isEmpty) {
           addError(error: kPassNullError);
           return "";
         } else if (value.length < 8) {
-          addError(error: kPassNullError);
+          addError(error: kShortPassError);
           return "";
         }
         return null;
@@ -142,10 +182,10 @@ class _SignUpFormState extends State<SignUpForm> {
       decoration: InputDecoration(
         labelText: "Password",
         hintText: "Enter your password",
+        // If  you are using latest version of flutter then lable text and hint text shown like this
+        // if you r using flutter less then 1.20.* then maybe this is not working properly
         floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(
-          svgIcon: "assets/icons/Lock.svg",
-        ),
+        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Lock.svg"),
       ),
     );
   }
@@ -153,9 +193,7 @@ class _SignUpFormState extends State<SignUpForm> {
   TextFormField buildEmailFormField() {
     return TextFormField(
       keyboardType: TextInputType.emailAddress,
-      onSaved: (newValue) {
-        email = newValue;
-      },
+      onSaved: (newValue) => email = newValue,
       onChanged: (value) {
         if (value.isNotEmpty) {
           removeError(error: kEmailNullError);
@@ -169,18 +207,18 @@ class _SignUpFormState extends State<SignUpForm> {
           addError(error: kEmailNullError);
           return "";
         } else if (!emailValidatorRegExp.hasMatch(value)) {
-          addError(error: kEmailNullError);
+          addError(error: kInvalidEmailError);
           return "";
         }
         return null;
       },
       decoration: InputDecoration(
         labelText: "Email",
-        hintText: "Enter your emails",
+        hintText: "Enter your email",
+        // If  you are using latest version of flutter then lable text and hint text shown like this
+        // if you r using flutter less then 1.20.* then maybe this is not working properly
         floatingLabelBehavior: FloatingLabelBehavior.always,
-        suffixIcon: CustomSurffixIcon(
-          svgIcon: "assets/icons/Mail.svg",
-        ),
+        suffixIcon: CustomSurffixIcon(svgIcon: "assets/icons/Mail.svg"),
       ),
     );
   }
